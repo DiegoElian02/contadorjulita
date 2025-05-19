@@ -31,12 +31,10 @@ image_files = [f for f in os.listdir(image_folder) if f.endswith((".jpg", ".png"
 if len(image_files) >= 10:
     col1, col2, col3 = st.columns([0.8, 2.4, 0.8])
 
-    # Izquierda: 3 imágenes en columna
     with col1:
         for i in range(3):
             st.image(os.path.join(image_folder, f"photo{i+1}.jpg"), use_container_width=True)
 
-    # Centro: Contador en vivo y línea de progreso con avión
     with col2:
         st.markdown("""
             <h2 style='text-align: center;'> Tiempo para volver a besarte!!:</h2>
@@ -45,7 +43,6 @@ if len(image_files) >= 10:
         
         progress = (datetime.datetime.now() - start_date).total_seconds() / (event_date - start_date).total_seconds()
         
-        # Crear barra de progreso personalizada con Plotly
         fig = go.Figure()
         fig.add_trace(go.Scatter(
             x=[0, 1], y=[0.5, 0.5], mode='lines', line=dict(color='gray', width=8, dash='solid'), showlegend=False
