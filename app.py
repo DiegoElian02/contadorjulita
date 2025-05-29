@@ -34,7 +34,7 @@ image_folder = "images"
 col1, col2, col3 = st.columns([0.8, 2.4, 0.8])
 
 with col1:
-    for i in range(3):
+    for i in range(4):
         st.image(os.path.join(image_folder, f"photo{i+1}.jpg"), use_container_width=True)
 
 with col2:
@@ -171,7 +171,7 @@ with col2:
 
 # Columna derecha
 with col3:
-    for i in range(4, 7):
+    for i in range(5, 9):
         st.image(os.path.join(image_folder, f"photo{i}.jpg"), use_container_width=True)
 
 # Contador en tiempo real
