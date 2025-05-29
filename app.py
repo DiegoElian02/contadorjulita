@@ -161,8 +161,8 @@ with col2:
 
     # Imágenes según la ciudad seleccionada
     st.markdown(f"<h4 style='text-align: center;'>Fotos de {selected_city}</h4>", unsafe_allow_html=True)
-    photo1 = os.path.join(image_folder, f"{selected_city()}1.jpg")
-    photo2 = os.path.join(image_folder, f"{selected_city()}2.jpg")
+    photo1 = os.path.join(image_folder, f"{selected_city}1.jpg")
+    photo2 = os.path.join(image_folder, f"{selected_city}2.jpg")
     img_col1, img_col2 = st.columns(2)
     with img_col1:
         st.image(photo1, use_container_width=True)
