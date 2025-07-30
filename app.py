@@ -11,13 +11,15 @@ st.set_page_config(page_title="Cuenta Regresiva", page_icon="✈️", layout="wi
 
 # Fechas importantes
 start_date = datetime.datetime(2025, 1, 4)  # Primer beso
-past_event = datetime.datetime(2025, 5, 10)  # Visita pasada
-event_date = datetime.datetime(2025, 6, 6)   # Próximo reencuentro
+prague_date = datetime.datetime(2025, 5, 10)  # Visita prague
+monterrey_date = datetime.datetime(2025, 6, 6)   # Visita Monterrey
+next_date = datetime.datetime(2025, 12, 13)  # Próxima visita
+
 
 
 def get_time_remaining():
     now = datetime.datetime.now()
-    time_left = event_date - now
+    time_left = next_date - now
     days = time_left.days
     hours, remainder = divmod(time_left.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -39,12 +41,12 @@ with col1:
 
 with col2:
     st.markdown("""
-        <h2 style='text-align: center;'> Te extraño!!</h2>
+        <h2 style='text-align: center;'> te extraño!</h2>
     """, unsafe_allow_html=True)
     countdown_placeholder = st.empty()
     
     # Línea del tiempo actualizada
-    progress = (datetime.datetime.now() - start_date).total_seconds() / (event_date - start_date).total_seconds()
+    progress = (datetime.datetime.now() - start_date).total_seconds() / (next_date - start_date).total_seconds()
     progress = max(0, min(1, progress))  # asegurar que esté entre 0 y 1
     
     fig = go.Figure()
@@ -54,17 +56,18 @@ with col2:
         ))
     
     # Puntos de fechas clave
-    # Puntos de fechas clave
+    date_positions = [
+        0,  # start_date
+        (prague_date - start_date).total_seconds() / (next_date - start_date).total_seconds(),
+        (monterrey_date - start_date).total_seconds() / (next_date - start_date).total_seconds(),
+        1  # next_date
+    ]
     fig.add_trace(go.Scatter(
-        x=[
-            0,
-            (past_event - start_date).total_seconds() / (event_date - start_date).total_seconds(),
-            1
-        ],
-        y=[0.5, 0.5, 0.5],
+        x=date_positions,
+        y=[0.5]*4,
         mode='markers+text',
         marker=dict(color='red', size=12),
-        text=["4 Ene", "10 Mayo", "6 Jun"],
+        text=["4 Ene", "10 Mayo", "6 Jun", "13 Dic"],
         textposition="top center",
         showlegend=False
     ))
