@@ -162,12 +162,20 @@ with col2:
             get_alignment_baseline="'bottom'"
         )
     ]
-
+    
     st.pydeck_chart(pdk.Deck(
-        map_style="mapbox://styles/mapbox/light-v10",
-        initial_view_state=view_state,
-        layers=geojson_layer + city_layers
+    map_provider="carto",
+    map_style=pdk.map_styles.MAPBOX_LIGHT,     # LIGHT | DARK | ROAD | SATELLITE
+    initial_view_state=view_state,
+    layers=geojson_layer + city_layers
     ), height=400)
+    
+    
+    # st.pydeck_chart(pdk.Deck(
+    #     map_style="mapbox://styles/mapbox/light-v10",
+    #     initial_view_state=view_state,
+    #     layers=geojson_layer + city_layers
+    # ), height=400)
 
     # ---------- Fotos centro (5 y 6) ----------
     st.markdown(f"<h4 style='text-align: center;'>Fotos de {selected_city}</h4>", unsafe_allow_html=True)
