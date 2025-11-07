@@ -26,7 +26,7 @@ def get_time_remaining():
     days = time_left.days
     hours, remainder = divmod(time_left.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
-    return f"{days} días, {hours:02d} horas, {minutes:02d} minutos, {seconds:02d} segundos"
+    return f"{days} días, {hours:02d} horas, {minutes:02d} minutos, {seconds:02d} segundos!"
 
 MESES_ES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
             "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
@@ -50,7 +50,7 @@ col1, col2, col3 = st.columns([0.8, 2.4, 0.8])
 
 # ---------- Columna central: Timeline ----------
 with col2:
-    st.markdown("<h2 style='text-align: center;'>¡Cuenta regresiva para volver a vernos!</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>¡siguiente aventura en:</h2>", unsafe_allow_html=True)
     countdown_placeholder = st.empty()
 
     total_seg = (next_date - start_date).total_seconds()
