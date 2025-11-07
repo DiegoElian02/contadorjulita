@@ -95,7 +95,7 @@ with col2:
         margin=dict(l=10, r=10, t=10, b=10),
         plot_bgcolor='white'
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width=True)
 
     # ===== Selector de ciudad (aquí: debajo del timeline, arriba del mapa) =====
     st.markdown("<h3 style='text-align: center;'>Nuestras ciudades</h3>", unsafe_allow_html=True)
@@ -165,7 +165,7 @@ with col2:
     
     st.pydeck_chart(pdk.Deck(
     map_provider="carto",
-    map_style=pdk.map_styles.MAPBOX_LIGHT,     # LIGHT | DARK | ROAD | SATELLITE
+    map_style=pdk.map_styles.LIGHT,     # LIGHT | DARK | ROAD | SATELLITE
     initial_view_state=view_state,
     layers=geojson_layer + city_layers
     ), height=400)
@@ -181,9 +181,9 @@ with col2:
     st.markdown(f"<h4 style='text-align: center;'>Fotos de {selected_city}</h4>", unsafe_allow_html=True)
     mid_c1, mid_c2 = st.columns(2)
     with mid_c1:
-        st.image(os.path.join(city_folder, "photo5.jpg"), use_container_width=True)
+        st.image(os.path.join(city_folder, "photo5.jpg"), width=True)
     with mid_c2:
-        st.image(os.path.join(city_folder, "photo6.jpg"), use_container_width=True)
+        st.image(os.path.join(city_folder, "photo6.jpg"), width=True)
 
 # ---------- Columna izquierda (1–4) y derecha (7–10) dependen del selected_city ----------
 # Nota: estas van DESPUÉS del selectbox para que ya exista selected_city / city_folder.
@@ -191,12 +191,12 @@ with col2:
 with col1:
     city_folder = os.path.join(image_root, selected_city)
     for i in range(1, 5):
-        st.image(os.path.join(city_folder, f"photo{i}.jpg"), use_container_width=True)
+        st.image(os.path.join(city_folder, f"photo{i}.jpg"), width=True)
 
 with col3:
     city_folder = os.path.join(image_root, selected_city)
     for i in range(7, 11):
-        st.image(os.path.join(city_folder, f"photo{i}.jpg"), use_container_width=True)
+        st.image(os.path.join(city_folder, f"photo{i}.jpg"), width=True)
 
 
 # Contador en tiempo real 
