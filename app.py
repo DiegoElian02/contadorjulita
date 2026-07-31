@@ -15,6 +15,7 @@ st.set_page_config(page_title="Las Machuqui-Aventuras", page_icon="✈️", layo
 start_date = datetime.datetime(2025, 1, 4)   # Primer beso
 prague_date = datetime.datetime(2025, 5, 10) # Visita Praga
 monterrey_date = datetime.datetime(2025, 6, 6)  # Visita Monterrey
+second_monterrey_date = datetime.datetime(2025, 11, 14)  # Próxima visita
 next_date = datetime.datetime(2026, 9, 14)  # Próxima visita
 
 def get_time_remaining():
@@ -63,13 +64,13 @@ with col2:
         mode='lines', line=dict(color='gray', width=8), showlegend=False
     ))
 
-    hitos = [start_date, prague_date, monterrey_date, next_date]
+    hitos = [start_date, prague_date, monterrey_date, second_monterrey_date, next_date]
     posiciones = [max(0.0, min(1.0, (d - start_date).total_seconds() / total_seg)) for d in hitos]
     etiquetas = [fecha_corta(d) for d in hitos]
 
     fig.add_trace(go.Scatter(
         x=posiciones,
-        y=[0.5]*4,
+        y=[0.5]*5,
         mode='markers+text',
         marker=dict(color='red', size=12),
         text=etiquetas,
