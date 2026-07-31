@@ -15,7 +15,7 @@ st.set_page_config(page_title="Las Machuqui-Aventuras", page_icon="✈️", layo
 start_date = datetime.datetime(2025, 1, 4)   # Primer beso
 prague_date = datetime.datetime(2025, 5, 10) # Visita Praga
 monterrey_date = datetime.datetime(2025, 6, 6)  # Visita Monterrey
-next_date = datetime.datetime(2025, 11, 14)  # Próxima visita
+next_date = datetime.datetime(2026, 9, 14)  # Próxima visita
 
 def get_time_remaining():
     now = datetime.datetime.now()
