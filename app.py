@@ -66,7 +66,7 @@ st.html(f"""
 </header>
 <section class="hero" id="inicio">
   <div class="hero-copy">
-    <h1>Nuestra historia<br><em>y viajes.</em></h1>
+    <h1>Nuestros<br><em>viajes.</em></h1>
     <a class="text-link" href="#proximo-viaje">{'El viaje' if meeting_has_arrived else 'Próximo viaje'} <span aria-hidden="true">↘</span></a>
   </div>
   <div class="hero-collage" aria-label="Recuerdos de Praga y París">
