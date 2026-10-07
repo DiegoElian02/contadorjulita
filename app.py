@@ -221,7 +221,7 @@ st.html("""
     <p>no se goza de la injusticia, mas se goza de la verdad,</p>
     <p>Todo lo sufre, todo lo cree, todo lo espera, todo lo soporta.</p>
   </blockquote>
-  <p class="scripture-reference">1 Corintios 13:4–7 <span>Reina-Valera 1909</span></p>
+  <p class="scripture-reference">1 Corintios 13:4–7</p>
 </section>
 <footer class="journal-footer">
   <span>Las Machuqui-Aventuras</span>
