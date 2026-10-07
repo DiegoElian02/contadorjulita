@@ -215,10 +215,10 @@ with st.container(key="photo_album"):
 st.html("""
 <section class="scripture" aria-label="1 Corintios 13, versículos 4 al 7">
   <blockquote>
-    <p>La caridad es sufrida, es benigna; la caridad no tiene envidia,
-    la caridad no hace sinrazón, no se ensancha;</p>
-    <p>No es injuriosa, no busca lo suyo, no se irrita, no piensa el mal;</p>
-    <p>No se huelga de la injusticia, mas se huelga de la verdad;</p>
+    <p> El amor es sufrido, es benigno; el amor no tiene envidia,
+    el amor no es jactancioso, no se envanece,</p>
+    <p>no hace nada indebido, no busca lo suyo, no se irrita, no guarda rencor,</p>
+    <p>no se goza de la injusticia, mas se goza de la verdad,</p>
     <p>Todo lo sufre, todo lo cree, todo lo espera, todo lo soporta.</p>
   </blockquote>
   <p class="scripture-reference">1 Corintios 13:4–7 <span>Reina-Valera 1909</span></p>
