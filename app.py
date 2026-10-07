@@ -1,206 +1,214 @@
+"""Las Machuqui-Aventuras: a small travel journal, built for Streamlit Cloud."""
+
+import base64
+from datetime import datetime
+from html import escape
+from io import BytesIO
+from pathlib import Path
+
+from PIL import Image, ImageOps
 import streamlit as st
-import datetime
-import os
-import time
-import plotly.graph_objects as go
-from PIL import Image
-import pydeck as pdk
-import json
 
-st.set_page_config(page_title="Las Machuqui-Aventuras", page_icon="✈️", layout="wide")
+from journey import (
+    CITIES, MILESTONES, NEXT_MEETING, TIMEZONE,
+    countdown_parts, formatted_coordinates, route_position,
+)
+from travel_map import build_map
 
-# =========================
-# Fechas importantes
-# =========================
-start_date = datetime.datetime(2025, 1, 4)   # Primer beso
-prague_date = datetime.datetime(2025, 5, 10) # Visita Praga
-monterrey_date = datetime.datetime(2025, 6, 6)  # Visita Monterrey
-second_monterrey_date = datetime.datetime(2025, 11, 14)  # Próxima visita
-next_date = datetime.datetime(2026, 9, 12)  # Próxima visita
+ROOT = Path(__file__).resolve().parent
+IMAGES = ROOT / "images"
+MONTHS = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
+_PLANE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#b9563e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 8.2 20 6a2.83 2.83 0 0 0-4-4l-2.2 2.2-3-1-1.6 1.6 2 2-3.6 3.6-5-1-1.6 1.6 5 3-3.8 3.8a1 1 0 0 0 .7 1.7h1.4l4-4 3 5 1.6-1.6-1-5 3.6-3.6 2 2 1.6-1.6-1-3Z"/></svg>'
+_ROUTE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 90" fill="none"><path d="M5 65C50 10 128 5 119 50S55 90 72 51 153 10 174 20" stroke="#b9563e88" stroke-width="1.5" stroke-dasharray="4 5"/></svg>'
+PLANE = f'<img class="plane-icon" src="data:image/svg+xml;base64,{base64.b64encode(_PLANE_SVG.encode()).decode()}" alt="" aria-hidden="true">'
+ROUTE = f'<img class="collage-route" src="data:image/svg+xml;base64,{base64.b64encode(_ROUTE_SVG.encode()).decode()}" alt="" aria-hidden="true">'
+meeting_has_arrived = datetime.now(TIMEZONE) >= NEXT_MEETING
 
-def get_time_remaining():
-    now = datetime.datetime.now()
-    time_left = next_date - now
-    # Corrige negativos si ya pasó la fecha
-    if time_left.total_seconds() < 0:
-        return "¡Ya juntos! ❤️"
-    days = time_left.days
-    hours, remainder = divmod(time_left.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return f"{days} días, {hours:02d} horas, {minutes:02d} minutos, {seconds:02d} segundos!"
+st.set_page_config(
+    page_title="Las Machuqui-Aventuras · Un diario de viajes",
+    page_icon="✈️", layout="wide", initial_sidebar_state="collapsed",
+)
+if "meeting_has_arrived" not in st.session_state:
+    st.session_state.meeting_has_arrived = meeting_has_arrived
+st.html(ROOT / "styles.css")
 
-MESES_ES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
-            "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-def fecha_corta(dt):
-    return f"{dt.day} {MESES_ES[dt.month-1]}"
 
-# =========================
-# Título
-# =========================
-st.markdown("<h1 style='text-align: center;'>Las Machuqui-Aventuras</h1>", unsafe_allow_html=True)
+@st.cache_data(show_spinner=False)
+def image_uri(relative_path: str) -> str:
+    """Embed small cover images without remote hosting or changing originals."""
+    with Image.open(IMAGES / relative_path) as original:
+        photo = ImageOps.exif_transpose(original).convert("RGB")
+        photo.thumbnail((1000, 1000))
+        buffer = BytesIO()
+        photo.save(buffer, format="JPEG", quality=86, optimize=True)
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/jpeg;base64,{encoded}"
 
-# Rutas raíz
-image_root = "images"
-airplane_path = os.path.join(image_root, "airplane.png")
-geojson_path = os.path.join(image_root, "countries.geojson")
 
-# =========================
-# Layout principal
-# =========================
-col1, col2, col3 = st.columns([0.8, 2.4, 0.8])
+def photo_paths(city_key: str) -> list[Path]:
+    return sorted((IMAGES / city_key).glob("photo*.jpg"),
+                  key=lambda path: int(path.stem.removeprefix("photo")))
 
-# ---------- Columna central: Timeline ----------
-with col2:
-    st.markdown("<h2 style='text-align: center;'>¡siguiente aventura en:</h2>", unsafe_allow_html=True)
-    countdown_placeholder = st.empty()
 
-    total_seg = (next_date - start_date).total_seconds()
-    progreso = (datetime.datetime.now() - start_date).total_seconds() / total_seg if total_seg > 0 else 0
-    progreso = max(0.0, min(1.0, progreso))
+st.html(f"""
+<header class="journal-header">
+  <a class="brand" href="#inicio" aria-label="Las Machuqui-Aventuras, inicio">
+    <span class="brand-icon">{PLANE}</span>
+    <span>las machuqui<span class="brand-second-line">aventuras</span></span>
+  </a>
+  <span class="header-note">UN PEQUEÑO DIARIO DE VIAJES</span>
+  <a class="header-link" href="#atlas">Nuestros recuerdos <span aria-hidden="true">↗</span></a>
+</header>
+<section class="hero" id="inicio">
+  <div class="hero-copy">
+    <p class="eyebrow"><span class="tiny-star" aria-hidden="true">✷</span> LUGARES, ENCUENTROS Y RECUERDOS</p>
+    <h1>Hay viajes que<br>se quedan <em>contigo.</em></h1>
+    <p class="hero-description">Las ciudades cambian. Lo vivido se queda.<br>Y todavía hay lugares por descubrir.</p>
+    <a class="text-link" href="#proximo-viaje">{'Una aventura más para recordar' if meeting_has_arrived else 'Una nueva aventura en el horizonte'} <span aria-hidden="true">↘</span></a>
+  </div>
+  <div class="hero-collage" aria-label="Recuerdos de Praga y París">
+    <figure class="polaroid polaroid-back">
+      <img src="{image_uri('Paris/photo1.jpg')}" alt="Un recuerdo de la visita a Disneyland París">
+      <figcaption>un poquito de París</figcaption>
+    </figure>
+    <figure class="polaroid polaroid-front">
+      <img src="{image_uri('Praga/photo1.jpg')}" alt="Julia y su compañero de viaje en Praga">
+      <figcaption>Praga, para recordar.</figcaption>
+    </figure>
+    <div class="travel-stamp" aria-label="Eurotrip en Europa">{'RECUERDO DE VIAJE' if meeting_has_arrived else 'PRÓXIMA PARADA'}<strong>EUROPA</strong><span>12 · 11 · 2026</span></div>
+    <span class="collage-spark" aria-hidden="true">✷</span>
+    {ROUTE}
+  </div>
+</section>
+""")
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=[0, 1], y=[0.5, 0.5],
-        mode='lines', line=dict(color='gray', width=8), showlegend=False
-    ))
 
-    hitos = [start_date, prague_date, monterrey_date, second_monterrey_date, next_date]
-    posiciones = [max(0.0, min(1.0, (d - start_date).total_seconds() / total_seg)) for d in hitos]
-    etiquetas = [fecha_corta(d) for d in hitos]
+@st.fragment(run_every="1s")
+def render_countdown():
+    now = datetime.now(TIMEZONE)
+    remaining = countdown_parts(now)
+    departed = now >= NEXT_MEETING
+    if departed != st.session_state.meeting_has_arrived:
+        # Refresh the cover and itinerary once when the clock reaches the date.
+        st.session_state.meeting_has_arrived = departed
+        st.rerun()
+    cells = "".join(
+        f'<div class="clock-unit"><span class="clock-number">{value:02d}</span><span class="clock-label">{label}</span></div>'
+        for value, label in zip(remaining, ("días", "horas", "minutos", "segundos"))
+    )
+    st.html(f"""
+    <section class="boarding-pass" id="proximo-viaje" aria-label="Cuenta atrás hasta el 12 de noviembre de 2026, hora de Budapest">
+      <div class="ticket-trip">
+        <span class="eyebrow">{'EL ENCUENTRO' if departed else 'EL PRÓXIMO ENCUENTRO'}</span>
+        <h2>Eurotrip <span class="ticket-plane">{PLANE}</span></h2>
+        <p>Europa · un viaje con amigos</p>
+      </div>
+      <div class="ticket-clock">
+        <span class="clock-title">{'Llegó el día. Buen viaje.' if departed else 'Nos vemos en'}</span>
+        <div class="clock" role="timer" aria-live="off">{cells}</div>
+      </div>
+      <div class="ticket-date">
+        <span class="eyebrow">GUARDA LA FECHA</span>
+        <strong>12 NOV</strong><span class="ticket-year">2026</span>
+        <span class="timezone-note">Hora de Budapest</span>
+      </div>
+    </section>
+    """)
 
-    fig.add_trace(go.Scatter(
-        x=posiciones,
-        y=[0.5]*5,
-        mode='markers+text',
-        marker=dict(color='red', size=12),
-        text=etiquetas,
-        textposition="top center",
-        showlegend=False
-    ))
 
-    airplane_img = Image.open(airplane_path)
-    fig.add_layout_image(
-        dict(
-            source=airplane_img,
-            x=progreso, y=0.56,
-            xref="x", yref="y",
-            sizex=1, sizey=1,
-            xanchor="center", yanchor="middle"
-        )
+render_countdown()
+
+
+@st.fragment(run_every="60s")
+def render_timeline():
+    now = datetime.now(TIMEZONE)
+    position = route_position(now) * 100
+    arrived = now >= NEXT_MEETING
+    stops = []
+    for index, milestone in enumerate(MILESTONES):
+        future = milestone.date > now
+        is_next = index == len(MILESTONES) - 1
+        state = "next-stop" if is_next else ("future-stop" if future else "past-stop")
+        stops.append(f"""
+        <li class="route-stop {state}">
+          <span class="stop-dot" aria-hidden="true"></span>
+          <time datetime="{milestone.date.date().isoformat()}">{milestone.date.day:02d} {MONTHS[milestone.date.month - 1]} <span>{milestone.date.year}</span></time>
+          <span class="stop-name">{escape(milestone.label)}</span>
+          {'<span class="next-label">PRÓXIMA AVENTURA</span>' if is_next and not arrived else ''}
+        </li>""")
+    st.html(f"""
+    <section class="timeline-card" id="ruta">
+      <div class="timeline-heading">
+        <div><p class="eyebrow">LA RUTA HASTA AQUÍ</p><h2>Cada encuentro cuenta.</h2></div>
+        <span class="route-caption">Un recuerdo a la vez <span aria-hidden="true">↗</span></span>
+      </div>
+      <div class="route-scroll">
+        <div class="flight-route" style="--flight-position:{position:.3f}%">
+          <div class="route-track" aria-hidden="true"><span class="route-travelled"></span>
+            <span class="route-airplane">{PLANE}{'' if arrived else '<span>en camino</span>'}</span>
+          </div>
+          <ol class="route-stops">{''.join(stops)}</ol>
+        </div>
+      </div>
+      <p class="timeline-footnote">De aquel primer beso al próximo vuelo. Hay fechas que se quedan.</p>
+    </section>
+    """)
+
+
+render_timeline()
+
+st.html("""
+<section class="section-heading" id="atlas">
+  <div><p class="eyebrow">LOS LUGARES QUE NOS GUARDAN</p><h2>Un pequeño atlas de recuerdos.</h2></div>
+  <span class="section-aside">03 ciudades <span aria-hidden="true">/</span> 02 continentes</span>
+</section>
+""")
+
+with st.container(key="city_selector"):
+    selected_city = st.radio(
+        "Elige una ciudad para explorar sus recuerdos", options=list(CITIES), index=0,
+        format_func=lambda city: CITIES[city]["label"], horizontal=True,
+        label_visibility="collapsed", key="selected_city",
     )
 
-    fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False, fixedrange=True)
-    fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False, fixedrange=True)
-    fig.update_layout(
-        width=600, height=120,
-        margin=dict(l=10, r=10, t=10, b=10),
-        plot_bgcolor='white'
-    )
-    st.plotly_chart(fig, use_container_width=True)
+city = CITIES[selected_city]
+photos = photo_paths(selected_city)
+with st.container(key="atlas_panels"):
+    map_column, postcard_column = st.columns([1.7, 1], gap="large")
 
-    # ===== Selector de ciudad (aquí: debajo del timeline, arriba del mapa) =====
-    st.markdown("<h3 style='text-align: center;'>Nuestras ciudades</h3>", unsafe_allow_html=True)
-    cities = {
-        "Monterrey": {"lat": 25.6866, "lon": -100.3161, "country": "Mexico"},
-        "Praga": {"lat": 50.0755, "lon": 14.4378, "country": "Czechia"},
-        "Paris": {"lat": 48.8566, "lon": 2.3522, "country": "France"},
-    }
-    default_idx = list(cities.keys()).index("Monterrey")
-    selected_city = st.selectbox(
-        "Selecciona una ciudad para enfocarla en el mapa:",
-        list(cities.keys()),
-        index=default_idx
-    )
-    selected_data = cities[selected_city]
-    city_folder = os.path.join(image_root, selected_city)
+with map_column:
+    with st.container(key="map_card"):
+        st.html(f"""<div class="map-topline"><span class="eyebrow">EN EL MAPA</span><span class="map-location"><span aria-hidden="true">●</span> {escape(city['label'])}, {escape(city['country'])}</span></div>""")
+        st.pydeck_chart(build_map(selected_city, city), height=350, width="stretch", key="travel_map")
+        st.html("""<div class="map-bottomline"><span><i class="map-key" aria-hidden="true"></i> Un lugar en nuestra historia</span><span>Arrastra para explorar · rueda o pellizco para acercar</span></div>""")
 
-    # ---------- Mapa ----------
-    with open(geojson_path, "r", encoding="utf-8") as f:
-        geojson_data = json.load(f)
+with postcard_column:
+    st.html(f"""
+    <article class="destination-postcard" aria-label="Recuerdos de {escape(city['label'])}">
+      <div class="postcard-photo"><img src="{image_uri(f'{selected_city}/photo1.jpg')}" alt="Una fotografía del álbum de {escape(city['label'])}"><span class="postcard-photo-label">DEL ÁLBUM DE VIAJE</span></div>
+      <div class="postcard-body">
+        <div class="postcard-title"><h3>{escape(city['label'])}</h3><span>{escape(city['country'])}</span></div>
+        <p>{escape(city['description'])}</p>
+        <div class="postcard-details"><span>{formatted_coordinates(selected_city)}</span><span>{len(photos):02d} recuerdos</span></div>
+      </div>
+    </article>
+    """)
 
-    country_feature = next(
-        (feat for feat in geojson_data["features"] if feat["properties"]["name"] == selected_data["country"]),
-        None
-    )
+st.html(f"""
+<div class="album-heading">
+  <div><p class="eyebrow">PEQUEÑOS INSTANTES, GRANDES RECUERDOS</p><h2>El álbum de {escape(city['label'])}.</h2></div>
+  <span class="album-count">{len(photos):02d} fotografías <span aria-hidden="true">↙</span></span>
+</div>
+""")
 
-    geojson_layer = []
-    if country_feature:
-        geojson_layer = [
-            pdk.Layer(
-                "GeoJsonLayer",
-                data=country_feature,
-                get_fill_color='[0, 100, 200, 80]',
-                get_line_color='[0, 0, 0]',
-                line_width_min_pixels=1,
-                pickable=False,
-            )
-        ]
+with st.container(key="photo_album"):
+    for index, photo in enumerate(photos):
+        st.image(str(photo), width="stretch", caption=f"{index + 1:02d} / {city['label']}")
 
-    view_state = pdk.ViewState(
-        latitude=selected_data["lat"],
-        longitude=selected_data["lon"],
-        zoom=5,
-        pitch=0
-    )
-
-    city_data = [{"name": name, "lat": val["lat"], "lon": val["lon"]} for name, val in cities.items()]
-    city_layers = [
-        pdk.Layer(
-            "ScatterplotLayer",
-            data=city_data,
-            get_position='[lon, lat]',
-            get_fill_color='[200, 30, 0, 160]',
-            get_radius=80000,
-        ),
-        pdk.Layer(
-            "TextLayer",
-            data=city_data,
-            get_position='[lon, lat]',
-            get_text='name',
-            get_size=16,
-            get_color=[0, 0, 0],
-            get_angle=0,
-            get_alignment_baseline="'bottom'"
-        )
-    ]
-    
-    st.pydeck_chart(pdk.Deck(
-    map_provider="carto",
-    map_style=pdk.map_styles.LIGHT,     # LIGHT | DARK | ROAD | SATELLITE
-    initial_view_state=view_state,
-    layers=geojson_layer + city_layers
-    ), height=400)
-    
-    
-    # st.pydeck_chart(pdk.Deck(
-    #     map_style="mapbox://styles/mapbox/light-v10",
-    #     initial_view_state=view_state,
-    #     layers=geojson_layer + city_layers
-    # ), height=400)
-
-    # ---------- Fotos centro (5 y 6) ----------
-    st.markdown(f"<h4 style='text-align: center;'>Fotos de {selected_city}</h4>", unsafe_allow_html=True)
-    mid_c1, mid_c2 = st.columns(2)
-    with mid_c1:
-        st.image(os.path.join(city_folder, "photo5.jpg"), use_container_width=True)
-    with mid_c2:
-        st.image(os.path.join(city_folder, "photo6.jpg"), use_container_width=True)
-
-# ---------- Columna izquierda (1–4) y derecha (7–10) dependen del selected_city ----------
-# Nota: estas van DESPUÉS del selectbox para que ya exista selected_city / city_folder.
-
-with col1:
-    city_folder = os.path.join(image_root, selected_city)
-    for i in range(1, 5):
-        st.image(os.path.join(city_folder, f"photo{i}.jpg"), use_container_width=True)
-
-with col3:
-    city_folder = os.path.join(image_root, selected_city)
-    for i in range(7, 11):
-        st.image(os.path.join(city_folder, f"photo{i}.jpg"), use_container_width=True)
-
-
-# Contador en tiempo real 
-while True: 
-    countdown_placeholder.markdown(f"<h3 style='text-align: center;'> {get_time_remaining()} </h3>", unsafe_allow_html=True) 
-    time.sleep(1)
+st.html("""
+<footer class="journal-footer">
+  <div><span class="footer-star" aria-hidden="true">✷</span><p>Para los lugares que fuimos.<br><em>Y los que todavía nos esperan.</em></p></div>
+  <span>Hecho de kilómetros y recuerdos.</span>
+  <a href="#inicio" aria-label="Volver al inicio">Volver arriba <span aria-hidden="true">↑</span></a>
+</footer>
+""")
