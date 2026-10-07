@@ -1,6 +1,7 @@
 """Las Machuqui-Aventuras: a small travel journal, built for Streamlit Cloud."""
 
 import base64
+import re
 from datetime import datetime
 from html import escape
 from io import BytesIO
@@ -10,7 +11,7 @@ from PIL import Image, ImageOps
 import streamlit as st
 
 from journey import (
-    CITIES, MILESTONES, NEXT_MEETING, TIMEZONE,
+    CITIES, EUROTRIP_CITIES, MILESTONES, NEXT_MEETING, TIMEZONE,
     countdown_parts, formatted_coordinates, route_position,
 )
 from travel_map import build_map
@@ -46,8 +47,12 @@ def image_uri(relative_path: str) -> str:
 
 
 def photo_paths(city_key: str) -> list[Path]:
-    return sorted((IMAGES / city_key).glob("photo*.jpg"),
-                  key=lambda path: int(path.stem.removeprefix("photo")))
+    numbered_photos = []
+    for path in (IMAGES / city_key).iterdir():
+        match = re.fullmatch(r"photo(\d+)\.(?:jpe?g|png|webp)", path.name, re.IGNORECASE)
+        if path.is_file() and match:
+            numbered_photos.append((int(match[1]), path))
+    return [path for _, path in sorted(numbered_photos)]
 
 
 st.html(f"""
@@ -56,26 +61,24 @@ st.html(f"""
     <span class="brand-icon">{PLANE}</span>
     <span>las machuqui<span class="brand-second-line">aventuras</span></span>
   </a>
-  <span class="header-note">UN PEQUEÑO DIARIO DE VIAJES</span>
-  <a class="header-link" href="#atlas">Nuestros recuerdos <span aria-hidden="true">↗</span></a>
+  <span class="header-note">DIARIO DE VIAJES</span>
+  <a class="header-link" href="#atlas">Álbumes <span aria-hidden="true">↗</span></a>
 </header>
 <section class="hero" id="inicio">
   <div class="hero-copy">
-    <p class="eyebrow"><span class="tiny-star" aria-hidden="true">✷</span> LUGARES, ENCUENTROS Y RECUERDOS</p>
-    <h1>Hay viajes que<br>se quedan <em>contigo.</em></h1>
-    <p class="hero-description">Las ciudades cambian. Lo vivido se queda.<br>Y todavía hay lugares por descubrir.</p>
-    <a class="text-link" href="#proximo-viaje">{'Una aventura más para recordar' if meeting_has_arrived else 'Una nueva aventura en el horizonte'} <span aria-hidden="true">↘</span></a>
+    <h1>Nuestros<br><em>viajes.</em></h1>
+    <a class="text-link" href="#proximo-viaje">{'El viaje' if meeting_has_arrived else 'Próximo viaje'} <span aria-hidden="true">↘</span></a>
   </div>
   <div class="hero-collage" aria-label="Recuerdos de Praga y París">
     <figure class="polaroid polaroid-back">
       <img src="{image_uri('Paris/photo1.jpg')}" alt="Un recuerdo de la visita a Disneyland París">
-      <figcaption>un poquito de París</figcaption>
+      <figcaption>París</figcaption>
     </figure>
     <figure class="polaroid polaroid-front">
       <img src="{image_uri('Praga/photo1.jpg')}" alt="Julia y su compañero de viaje en Praga">
-      <figcaption>Praga, para recordar.</figcaption>
+      <figcaption>Praga</figcaption>
     </figure>
-    <div class="travel-stamp" aria-label="Eurotrip en Europa">{'RECUERDO DE VIAJE' if meeting_has_arrived else 'PRÓXIMA PARADA'}<strong>EUROPA</strong><span>12 · 11 · 2026</span></div>
+    <div class="travel-stamp" aria-label="Eurotrip en Europa">{'EL VIAJE' if meeting_has_arrived else 'PRÓXIMO VIAJE'}<strong>EUROPA</strong><span>12 · 11 · 2026</span></div>
     <span class="collage-spark" aria-hidden="true">✷</span>
     {ROUTE}
   </div>
@@ -97,20 +100,19 @@ def render_countdown():
         for value, label in zip(remaining, ("días", "horas", "minutos", "segundos"))
     )
     st.html(f"""
-    <section class="boarding-pass" id="proximo-viaje" aria-label="Cuenta atrás hasta el 12 de noviembre de 2026, hora de Budapest">
+    <section class="boarding-pass" id="proximo-viaje" aria-label="Cuenta atrás hasta el 12 de noviembre de 2026">
       <div class="ticket-trip">
-        <span class="eyebrow">{'EL ENCUENTRO' if departed else 'EL PRÓXIMO ENCUENTRO'}</span>
+        <span class="eyebrow">{'EL VIAJE' if departed else 'PRÓXIMO VIAJE'}</span>
         <h2>Eurotrip <span class="ticket-plane">{PLANE}</span></h2>
-        <p>Europa · un viaje con amigos</p>
+        <p class="trip-cities">{' · '.join(escape(name) for name in EUROTRIP_CITIES)}</p>
       </div>
       <div class="ticket-clock">
-        <span class="clock-title">{'Llegó el día. Buen viaje.' if departed else 'Nos vemos en'}</span>
+        <span class="clock-title">{'Llegó el día' if departed else 'Nos vemos en'}</span>
         <div class="clock" role="timer" aria-live="off">{cells}</div>
       </div>
       <div class="ticket-date">
-        <span class="eyebrow">GUARDA LA FECHA</span>
+        <span class="eyebrow">SALIDA</span>
         <strong>12 NOV</strong><span class="ticket-year">2026</span>
-        <span class="timezone-note">Hora de Budapest</span>
       </div>
     </section>
     """)
@@ -134,33 +136,31 @@ def render_timeline():
           <span class="stop-dot" aria-hidden="true"></span>
           <time datetime="{milestone.date.date().isoformat()}">{milestone.date.day:02d} {MONTHS[milestone.date.month - 1]} <span>{milestone.date.year}</span></time>
           <span class="stop-name">{escape(milestone.label)}</span>
-          {'<span class="next-label">PRÓXIMA AVENTURA</span>' if is_next and not arrived else ''}
+          {'<span class="next-label">PRÓXIMO VIAJE</span>' if is_next and not arrived else ''}
         </li>""")
     st.html(f"""
     <section class="timeline-card" id="ruta">
       <div class="timeline-heading">
-        <div><p class="eyebrow">LA RUTA HASTA AQUÍ</p><h2>Cada encuentro cuenta.</h2></div>
-        <span class="route-caption">Un recuerdo a la vez <span aria-hidden="true">↗</span></span>
+        <div><h2>Nuestra historia</h2></div>
       </div>
       <div class="route-scroll">
-        <div class="flight-route" style="--flight-position:{position:.3f}%">
+        <div class="flight-route" style="--flight-position:{position:.3f}%; --stop-count:{len(MILESTONES)}">
           <div class="route-track" aria-hidden="true"><span class="route-travelled"></span>
             <span class="route-airplane">{PLANE}{'' if arrived else '<span>en camino</span>'}</span>
           </div>
           <ol class="route-stops">{''.join(stops)}</ol>
         </div>
       </div>
-      <p class="timeline-footnote">De aquel primer beso al próximo vuelo. Hay fechas que se quedan.</p>
     </section>
     """)
 
 
 render_timeline()
 
-st.html("""
+st.html(f"""
 <section class="section-heading" id="atlas">
-  <div><p class="eyebrow">LOS LUGARES QUE NOS GUARDAN</p><h2>Un pequeño atlas de recuerdos.</h2></div>
-  <span class="section-aside">03 ciudades <span aria-hidden="true">/</span> 02 continentes</span>
+  <div><h2>Lugares</h2></div>
+  <span class="section-aside">{len(CITIES):02d} ciudades</span>
 </section>
 """)
 
@@ -180,35 +180,51 @@ with map_column:
     with st.container(key="map_card"):
         st.html(f"""<div class="map-topline"><span class="eyebrow">EN EL MAPA</span><span class="map-location"><span aria-hidden="true">●</span> {escape(city['label'])}, {escape(city['country'])}</span></div>""")
         st.pydeck_chart(build_map(selected_city, city), height=350, width="stretch", key="travel_map")
-        st.html("""<div class="map-bottomline"><span><i class="map-key" aria-hidden="true"></i> Un lugar en nuestra historia</span><span>Arrastra para explorar · rueda o pellizco para acercar</span></div>""")
+        st.html("""<div class="map-bottomline"><span><i class="map-key" aria-hidden="true"></i> Destinos</span><span>Arrastra para explorar · rueda o pellizco para acercar</span></div>""")
 
 with postcard_column:
+    if photos:
+        cover = f'<div class="postcard-photo"><img src="{image_uri(str(photos[0].relative_to(IMAGES)))}" alt="Una fotografía de {escape(city["label"])}"></div>'
+    else:
+        cover = '<div class="postcard-photo empty-photo"><span>Álbum pendiente</span></div>'
+    visit = f'<p>{escape(city["description"])}</p>' if city["description"] != city["country"] else ''
     st.html(f"""
     <article class="destination-postcard" aria-label="Recuerdos de {escape(city['label'])}">
-      <div class="postcard-photo"><img src="{image_uri(f'{selected_city}/photo1.jpg')}" alt="Una fotografía del álbum de {escape(city['label'])}"><span class="postcard-photo-label">DEL ÁLBUM DE VIAJE</span></div>
+      {cover}
       <div class="postcard-body">
         <div class="postcard-title"><h3>{escape(city['label'])}</h3><span>{escape(city['country'])}</span></div>
-        <p>{escape(city['description'])}</p>
-        <div class="postcard-details"><span>{formatted_coordinates(selected_city)}</span><span>{len(photos):02d} recuerdos</span></div>
+        {visit}
+        <div class="postcard-details"><span>{formatted_coordinates(selected_city)}</span><span>{len(photos):02d} fotos</span></div>
       </div>
     </article>
     """)
 
 st.html(f"""
 <div class="album-heading">
-  <div><p class="eyebrow">PEQUEÑOS INSTANTES, GRANDES RECUERDOS</p><h2>El álbum de {escape(city['label'])}.</h2></div>
+  <div><h2>Álbum de {escape(city['label'])}</h2></div>
   <span class="album-count">{len(photos):02d} fotografías <span aria-hidden="true">↙</span></span>
 </div>
 """)
 
 with st.container(key="photo_album"):
+    if not photos:
+        st.caption("Aún no hay fotos en este álbum.")
     for index, photo in enumerate(photos):
         st.image(str(photo), width="stretch", caption=f"{index + 1:02d} / {city['label']}")
 
 st.html("""
+<section class="scripture" aria-label="1 Corintios 13, versículos 4 al 7">
+  <blockquote>
+    <p>La caridad es sufrida, es benigna; la caridad no tiene envidia,
+    la caridad no hace sinrazón, no se ensancha;</p>
+    <p>No es injuriosa, no busca lo suyo, no se irrita, no piensa el mal;</p>
+    <p>No se huelga de la injusticia, mas se huelga de la verdad;</p>
+    <p>Todo lo sufre, todo lo cree, todo lo espera, todo lo soporta.</p>
+  </blockquote>
+  <p class="scripture-reference">1 Corintios 13:4–7 <span>Reina-Valera 1909</span></p>
+</section>
 <footer class="journal-footer">
-  <div><span class="footer-star" aria-hidden="true">✷</span><p>Para los lugares que fuimos.<br><em>Y los que todavía nos esperan.</em></p></div>
-  <span>Hecho de kilómetros y recuerdos.</span>
+  <span>Las Machuqui-Aventuras</span>
   <a href="#inicio" aria-label="Volver al inicio">Volver arriba <span aria-hidden="true">↑</span></a>
 </footer>
 """)

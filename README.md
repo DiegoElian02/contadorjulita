@@ -1,6 +1,6 @@
 # Las Machuqui-Aventuras
 
-Un diario de viajes en Streamlit: cuenta atrás para el **12 de noviembre de 2026**, recorrido de encuentros, atlas interactivo y álbumes de Praga, París y Monterrey.
+Un diario de viajes en Streamlit: cuenta atrás para el **12 de noviembre de 2026**, recorrido de encuentros, atlas interactivo y álbumes de Praga, París, Monterrey y Saltillo. El Eurotrip incluye Madrid, Barcelona, París, Londres y Berlín; al final de la página aparece 1 Corintios 13:4–7 (Reina-Valera 1909).
 
 ## Ejecutar
 
@@ -19,7 +19,7 @@ En Streamlit Community Cloud, selecciona este repositorio y `app.py` como archiv
 
 - `journey.py` contiene la fecha del próximo encuentro, los hitos y los destinos. El contador usa la hora de Budapest y respeta los cambios de horario; la fecha objetivo empieza a las 00:00.
 - El contador se actualiza cada segundo con `st.fragment`, sin bloquear los controles. Al llegar la fecha se queda en cero y cambia el mensaje.
-- Las fotos originales se conservan en `images/<ciudad>/photoN.jpg`. El álbum detecta y ordena todas las fotos de la ciudad, incluida `photo11.jpg` de Praga.
+- Las fotos originales se conservan en `images/<ciudad>/photoN.jpg`. El álbum detecta y ordena por número todas las fotos de la ciudad, incluida `photo11.jpg` de Praga. También admite `.jpeg`, `.png` y `.webp`. `images/Saltillo/` está preparado para añadir fotos de la visita del 1 de febrero de 2025; un álbum sin fotos muestra un estado vacío.
 - `styles.css` adapta las tarjetas y el álbum al ancho de la pantalla; la línea de tiempo se vuelve vertical en móvil. Las fotos pueden ampliarse con el control nativo de Streamlit.
 
 ## Comprobar

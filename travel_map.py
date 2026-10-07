@@ -17,7 +17,7 @@ from journey import CITIES
 
 
 _GEOJSON_PATH = Path(__file__).resolve().parent / "images" / "countries.geojson"
-_CITY_ZOOMS = {"Monterrey": 2.8, "Praga": 4.5, "Paris": 3.7}
+_CITY_ZOOMS = {"Monterrey": 2.8, "Saltillo": 3.7, "Praga": 4.5, "Paris": 3.7}
 
 _OCEAN = [232, 237, 229, 255]
 _LAND = [239, 232, 216, 255]
@@ -227,9 +227,9 @@ def build_map(city_key: str, city_data: dict) -> pdk.Deck:
                 get_text="name",
                 get_size=13,
                 get_color=_INK,
-                get_pixel_offset=[0, -18],
+                get_pixel_offset=[0, 18],
                 get_text_anchor="'middle'",
-                get_alignment_baseline="'bottom'",
+                get_alignment_baseline="'top'",
                 font_family="'Arial, sans-serif'",
                 font_weight=500,
                 character_set="'auto'",

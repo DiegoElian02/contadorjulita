@@ -19,7 +19,11 @@ class AppIntegrationTests(unittest.TestCase):
     def test_city_switch_updates_country_pin_and_photo_album(self):
         app = AppTest.from_file(str(APP_PATH), default_timeout=30).run()
         previous_photos = None
-        for city_key, expected_count in (("Praga", 11), ("Paris", 10), ("Monterrey", 10)):
+        saltillo_count = sum(
+            path.is_file() and bool(re.fullmatch(r"photo\d+\.(?:jpg|jpeg|png|webp)", path.name, re.IGNORECASE))
+            for path in (APP_PATH.parent / "images" / "Saltillo").iterdir()
+        )
+        for city_key, expected_count in (("Praga", 11), ("Paris", 10), ("Monterrey", 10), ("Saltillo", saltillo_count)):
             with self.subTest(city=city_key):
                 app.radio[0].set_value(city_key).run()
                 self.assertEqual(len(app.exception), 0)
@@ -36,6 +40,8 @@ class AppIntegrationTests(unittest.TestCase):
                 )
                 self.assertEqual(deck["initialViewState"]["latitude"], city["lat"])
                 self.assertEqual(deck["initialViewState"]["longitude"], city["lon"])
+                if city_key == "Saltillo" and expected_count == 0:
+                    self.assertIn("Aún no hay fotos en este álbum.", [element.value for element in app.caption])
                 images = [image for element in app.get("image") for image in element.proto.imgs]
                 self.assertEqual(len(images), expected_count)
                 self.assertTrue(all(image.caption.endswith(f"/ {city['label']}") for image in images))

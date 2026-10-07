@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 TIMEZONE = ZoneInfo("Europe/Budapest")
 FIRST_MEMORY = datetime(2025, 1, 4, tzinfo=TIMEZONE)
 NEXT_MEETING = datetime(2026, 11, 12, tzinfo=TIMEZONE)
+EUROTRIP_CITIES = ("Madrid", "Barcelona", "París", "Londres", "Berlín")
 
 CITIES = {
     "Praga": {
@@ -17,7 +18,7 @@ CITIES = {
         "country_geojson": "Czechia",
         "lat": 50.0755,
         "lon": 14.4378,
-        "description": "Entre puentes, calles y recuerdos.",
+        "description": "10 de mayo de 2025",
     },
     "Paris": {
         "label": "París",
@@ -25,7 +26,7 @@ CITIES = {
         "country_geojson": "France",
         "lat": 48.8566,
         "lon": 2.3522,
-        "description": "Una ciudad que también vive en nuestras fotos.",
+        "description": "10 de mayo de 2025",
     },
     "Monterrey": {
         "label": "Monterrey",
@@ -33,7 +34,15 @@ CITIES = {
         "country_geojson": "Mexico",
         "lat": 25.6866,
         "lon": -100.3161,
-        "description": "Paisajes que se vuelven parte de la historia.",
+        "description": "México",
+    },
+    "Saltillo": {
+        "label": "Saltillo",
+        "country": "México",
+        "country_geojson": "Mexico",
+        "lat": 25.4383,
+        "lon": -100.9737,
+        "description": "1 de febrero de 2025",
     },
 }
 
@@ -47,10 +56,11 @@ class Milestone:
 
 MILESTONES = (
     Milestone(FIRST_MEMORY, "Primer beso"),
-    Milestone(datetime(2025, 5, 10, tzinfo=TIMEZONE), "Praga", "Praga"),
+    Milestone(datetime(2025, 2, 1, tzinfo=TIMEZONE), "Saltillo", "Saltillo"),
+    Milestone(datetime(2025, 5, 10, tzinfo=TIMEZONE), "Praga y París", "Praga"),
     Milestone(datetime(2025, 6, 6, tzinfo=TIMEZONE), "Monterrey", "Monterrey"),
     Milestone(datetime(2025, 11, 14, tzinfo=TIMEZONE), "Monterrey", "Monterrey"),
-    Milestone(datetime(2026, 9, 12, tzinfo=TIMEZONE), "Reencuentro"),
+    Milestone(datetime(2026, 9, 12, tzinfo=TIMEZONE), "Monterrey", "Monterrey"),
     Milestone(NEXT_MEETING, "Eurotrip"),
 )
 

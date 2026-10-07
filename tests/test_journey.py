@@ -69,11 +69,11 @@ class TimelineTests(unittest.TestCase):
     def test_plane_reaches_each_evenly_spaced_stop_on_its_date(self):
         for index, milestone in enumerate(MILESTONES):
             with self.subTest(milestone=milestone):
-                self.assertAlmostEqual(route_position(milestone.date), index / 5)
+                self.assertAlmostEqual(route_position(milestone.date), index / (len(MILESTONES) - 1))
 
-    def test_current_plane_is_between_reencounter_and_eurotrip(self):
+    def test_current_plane_is_between_monterrey_and_eurotrip(self):
         position = route_position(datetime(2026, 10, 7, tzinfo=TIMEZONE))
-        self.assertGreater(position, 4 / 5)
+        self.assertGreater(position, (len(MILESTONES) - 2) / (len(MILESTONES) - 1))
         self.assertLess(position, 1.0)
 
     def test_route_position_clamps_before_and_after(self):
@@ -85,9 +85,10 @@ class CityTests(unittest.TestCase):
     def test_coordinate_hemispheres(self):
         self.assertEqual(formatted_coordinates("Monterrey"), "25.6866° N · 100.3161° O")
         self.assertEqual(formatted_coordinates("Paris"), "48.8566° N · 2.3522° E")
+        self.assertEqual(formatted_coordinates("Saltillo"), "25.4383° N · 100.9737° O")
 
     def test_city_keys_preserve_photo_folder_names(self):
-        self.assertEqual(list(CITIES), ["Praga", "Paris", "Monterrey"])
+        self.assertEqual(list(CITIES), ["Praga", "Paris", "Monterrey", "Saltillo"])
         self.assertEqual(CITIES["Paris"]["label"], "París")
 
 
